@@ -1,0 +1,2 @@
+(matatu|matatus|bus|buses|vehicle|vehicles|car|cars|motorbike|motorbikes|motorcycle|motorcycles|truck|trucks|lorry|lorries) (rolled|crashed|collided|plunged|ran over)	ACCIDENT
+(road|highway) (crash|accident|carnage)	ACCIDENT
