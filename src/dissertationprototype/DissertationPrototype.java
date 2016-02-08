@@ -160,21 +160,21 @@ public class DissertationPrototype extends DefaultHandler {
                                             String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
                                             String ne = token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
                 // Will try to focus more on NER to reduce file size and processing load
-                /*
-                                             if (wordsMap.containsKey(word)) {
-                                             wordMap = wordsMap.get(word);
-                                             if (wordMap.containsKey(pos)) {
-                                             wordCount = wordMap.get(pos) + 1;
-                                             wordMap.put(pos, wordCount);
-                                             } else {
-                                             wordMap.put(pos, wordCount);
-                                             }
-                                             } else {
-                                             wordMap = new HashMap<>();
-                                             wordMap.put(pos, wordCount);
-                                             }
-                                             wordsMap.put(word, wordMap);
-                                             */
+
+                                            if (wordsMap.containsKey(word)) {
+                                                wordMap = wordsMap.get(word);
+                                                if (wordMap.containsKey(pos)) {
+                                                    wordCount = wordMap.get(pos) + 1;
+                                                    wordMap.put(pos, wordCount);
+                                                } else {
+                                                    wordMap.put(pos, wordCount);
+                                                }
+                                            } else {
+                                                wordMap = new HashMap<>();
+                                                wordMap.put(pos, wordCount);
+                                            }
+                                            wordsMap.put(word, wordMap);
+
                                             //We have to get the full name entity including title which will not have been tagged by the ner
                                             //this could involve n-gram processing and addition of custom ners
                                             if (!ne.equalsIgnoreCase("O")) {
@@ -202,7 +202,7 @@ public class DissertationPrototype extends DefaultHandler {
                                     }
                                 }
                                 dataMap.put("NER", neMap);
-//        dataMap.put("WORD", wordsMap);
+                                dataMap.put("WORD", wordsMap);
                                 jsonMap.put(url, dataMap);
                             }
                         }
