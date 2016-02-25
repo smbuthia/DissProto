@@ -214,30 +214,30 @@ public class DissertationPrototype extends DefaultHandler {
                                 /*
                                  at this point map out the location name entities to counties
                                  */
-                                Map locationsMap = neMap.get("location");
-                                Iterator it1 = locationsMap.entrySet().iterator();
-                                List<String> counties = new ArrayList<>();
-                                while (it1.hasNext()) {
-                                    Map.Entry me = (Map.Entry) it1.next();
-                                    String location = me.getKey().toString();
-                                    //if it is a location name entity then get the county the location belongs to
-                                    ProcessBuilder pbuilder = new ProcessBuilder("py C:\\Users\\smbuthia\\PycharmProjects\\dissertationproject\\edu\\strathmore\\__init__.py " + location);
-                                    Process proc = pbuilder.start();
-                                    BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-                                    String county = reader.readLine();
-                                    if (county.length() < 20 && !county.isEmpty() && !counties.contains(county)) {
-                                        counties.add(county);
+                                Map locationsMap = neMap.get("LOCATION");
+                                if (locationsMap != null) {
+                                    Iterator it1 = locationsMap.entrySet().iterator();
+                                    List<String> counties = new ArrayList<>();
+                                    while (it1.hasNext()) {
+                                        Map.Entry me = (Map.Entry) it1.next();
+                                        String location = me.getKey().toString();
+                                        //if it is a location name entity then get the county the location belongs to
+                                        if (!location.equalsIgnoreCase("Kenya")) {
+                                            String county = getCounty(location);
+                                            if (!county.isEmpty() && !counties.contains(county)) {
+                                                counties.add(county);
+                                            }
+                                        }
                                     }
+                                    counties.stream().forEach((county) -> {
+                                        if (countiesMap.containsKey(county)) {
+                                            int countyCount = countiesMap.get(county) + 1;
+                                            countiesMap.replace(county, countyCount);
+                                        } else {
+                                            countiesMap.put(county, 1);
+                                        }
+                                    });
                                 }
-                                counties.stream().forEach((county) -> {
-                                    if (countiesMap.containsKey(county)) {
-                                        int countyCount = countiesMap.get(county) + 1;
-                                        countiesMap.replace(county, countyCount);
-                                    } else {
-                                        countiesMap.put(county, 1);
-                                    }
-                                });
-
                                 dataMap.put("NER", neMap);
                                 dataMap.put("WORD", wordsMap);
                                 jsonMap.put(url, dataMap);
@@ -249,6 +249,25 @@ public class DissertationPrototype extends DefaultHandler {
         }
         String[] jsonArrays = {gson.toJson(jsonMap), gson.toJson(countiesMap)};
         return jsonArrays;
+    }
+
+    public static String getCounty(String location) {
+        try {
+            String command = "C:/Python34/python.exe";
+            String pyFile = "C:/Users/smbuthia/PycharmProjects/dissertationproject/edu/strathmore/__init__.py";
+            ProcessBuilder pbuilder = new ProcessBuilder(command, pyFile, location);
+            Process proc = pbuilder.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            String county = reader.readLine();
+            if (county != null) {
+                if (county.length() < 20) {
+                    return county;
+                }
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(DissertationPrototype.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return "";
     }
 
     @Override
