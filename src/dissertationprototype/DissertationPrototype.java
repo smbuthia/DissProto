@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -59,8 +60,8 @@ public class DissertationPrototype extends DefaultHandler {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        System.setProperty("proxyHost", "172.16.30.6");
-        System.setProperty("proxyPort", "8080");
+//        System.setProperty("proxyHost", "172.16.30.6");
+//        System.setProperty("proxyPort", "8080");
         try {
             list = new ArrayList<>();
             XMLReader xr = XMLReaderFactory.createXMLReader();
@@ -78,19 +79,23 @@ public class DissertationPrototype extends DefaultHandler {
             list.stream().forEach((li) -> {
                 System.out.println(li);
             });
-            String jsonString = processUtterance(list);
+            String[] jsonStrings = processUtterance(list);
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-YYYY");
             Date date = new Date();
-            String filename = "C:\\wamp\\www\\diss-proto\\json\\" + dateFormat.format(date) + ".json";
-            try (PrintWriter writer = new PrintWriter(filename)) {
-                writer.println(jsonString);
+            String filename1 = "C:\\wamp\\www\\diss-proto\\json\\" + dateFormat.format(date) + ".json";
+            try (PrintWriter writer = new PrintWriter(filename1)) {
+                writer.println(jsonStrings[0]);
+            }
+            String filename2 = "C:\\wamp\\www\\diss-proto\\json\\counties-" + dateFormat.format(date) + ".json";
+            try (PrintWriter writer = new PrintWriter(filename2)) {
+                writer.println(jsonStrings[1]);
             }
         } catch (IOException | SAXException ex) {
             Logger.getLogger(DissertationPrototype.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    private static String processUtterance(List<String> urls) throws IOException {
+    private static String[] processUtterance(List<String> urls) throws IOException {
         Gson gson = new Gson();
         Map<String, Map> jsonMap = new HashMap<>();
 
@@ -98,7 +103,10 @@ public class DissertationPrototype extends DefaultHandler {
         //props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
         props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
         StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-
+        /**
+         * A map that holds the location name entities as mapped to counties
+         */
+        Map<String, Integer> countiesMap = new HashMap<>();
         for (String url : urls) {
             Map<String, Map> dataMap = new HashMap<>();
             Map<String, Map> neMap = new HashMap<>();
@@ -159,7 +167,6 @@ public class DissertationPrototype extends DefaultHandler {
                                             String word = token.get(CoreAnnotations.TextAnnotation.class);
                                             String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
                                             String ne = token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
-                // Will try to focus more on NER to reduce file size and processing load
 
                                             if (wordsMap.containsKey(word)) {
                                                 wordMap = wordsMap.get(word);
@@ -175,8 +182,10 @@ public class DissertationPrototype extends DefaultHandler {
                                             }
                                             wordsMap.put(word, wordMap);
 
-                                            //We have to get the full name entity including title which will not have been tagged by the ner
-                                            //this could involve n-gram processing and addition of custom ners
+                                            /* 
+                                             We have to get the full name entity including title which will not have been
+                                             tagged by the ner this could involve n-gram processing and addition of custom ners
+                                             */
                                             if (!ne.equalsIgnoreCase("O")) {
                                                 neWord = word;
                                                 if (ne.equalsIgnoreCase(prevNe)) {
@@ -196,11 +205,39 @@ public class DissertationPrototype extends DefaultHandler {
                                                 }
                                                 prevNeWord = neWord;
                                                 neMap.put(ne, neWordMap);   //"ORGANIZATION":{"TSC":3,"Kuppet":5}
+
                                             }
                                             prevNe = ne;
                                         }
                                     }
                                 }
+                                /*
+                                 at this point map out the location name entities to counties
+                                 */
+                                Map locationsMap = neMap.get("location");
+                                Iterator it1 = locationsMap.entrySet().iterator();
+                                List<String> counties = new ArrayList<>();
+                                while (it1.hasNext()) {
+                                    Map.Entry me = (Map.Entry) it1.next();
+                                    String location = me.getKey().toString();
+                                    //if it is a location name entity then get the county the location belongs to
+                                    ProcessBuilder pbuilder = new ProcessBuilder("py C:\\Users\\smbuthia\\PycharmProjects\\dissertationproject\\edu\\strathmore\\__init__.py " + location);
+                                    Process proc = pbuilder.start();
+                                    BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+                                    String county = reader.readLine();
+                                    if (county.length() < 20 && !county.isEmpty() && !counties.contains(county)) {
+                                        counties.add(county);
+                                    }
+                                }
+                                counties.stream().forEach((county) -> {
+                                    if (countiesMap.containsKey(county)) {
+                                        int countyCount = countiesMap.get(county) + 1;
+                                        countiesMap.replace(county, countyCount);
+                                    } else {
+                                        countiesMap.put(county, 1);
+                                    }
+                                });
+
                                 dataMap.put("NER", neMap);
                                 dataMap.put("WORD", wordsMap);
                                 jsonMap.put(url, dataMap);
@@ -210,7 +247,8 @@ public class DissertationPrototype extends DefaultHandler {
                 }
             }
         }
-        return gson.toJson(jsonMap);
+        String[] jsonArrays = {gson.toJson(jsonMap), gson.toJson(countiesMap)};
+        return jsonArrays;
     }
 
     @Override
