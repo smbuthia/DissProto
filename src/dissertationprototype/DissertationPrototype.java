@@ -28,9 +28,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -60,22 +57,24 @@ public class DissertationPrototype extends DefaultHandler {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-//        System.setProperty("proxyHost", "172.16.30.6");
-//        System.setProperty("proxyPort", "8080");
+        //Set system properties (proxy)
+        System.setProperty("proxyHost", "172.16.30.6");
+        System.setProperty("proxyPort", "8080");
         try {
             list = new ArrayList<>();
+            //Intantiate an XMLReader object that will read RSS/XML content
             XMLReader xr = XMLReaderFactory.createXMLReader();
             DissertationPrototype handler = new DissertationPrototype();
             xr.setContentHandler(handler);
             xr.setErrorHandler(handler);
-
+            //Create URL object for the main feed being read
             URL url = new URL("http://www.nation.co.ke/rss.xml");
             URLConnection connection = url.openConnection();
             connection.addRequestProperty("user-agent", "Mozilla");
 
             BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
             xr.parse(new InputSource(br));
-
+            
             list.stream().forEach((li) -> {
                 System.out.println(li);
             });
@@ -126,7 +125,7 @@ public class DissertationPrototype extends DefaultHandler {
                     Element section = sections.first();
                     if (section != null) {
                         Elements articleHeadlines = doc.getElementsByAttributeValue("itemprop", "headline name");
-                        Elements articleBodies = section.getElementsByAttributeValue("itemprop", "articleBody");
+                        Elements articleBodies = section.getElementsByAttributeValue("itemprop", "articleBody"); //this was the older html structure
                         if (articleBodies != null) {
                             Element articleBody = articleBodies.first();
                             Element articleHeadline = articleHeadlines.first();
@@ -205,7 +204,6 @@ public class DissertationPrototype extends DefaultHandler {
                                                 }
                                                 prevNeWord = neWord;
                                                 neMap.put(ne, neWordMap);   //"ORGANIZATION":{"TSC":3,"Kuppet":5}
-
                                             }
                                             prevNe = ne;
                                         }
@@ -254,7 +252,7 @@ public class DissertationPrototype extends DefaultHandler {
     public static String getCounty(String location) {
         try {
             String command = "C:/Python34/python.exe";
-            String pyFile = "C:/Users/smbuthia/PycharmProjects/dissertationproject/edu/strathmore/__init__.py";
+            String pyFile = "C:/Users/smbuthia/PycharmProjects/dissertationproject/edu/strathmore/location_processor.py";
             ProcessBuilder pbuilder = new ProcessBuilder(command, pyFile, location);
             Process proc = pbuilder.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
