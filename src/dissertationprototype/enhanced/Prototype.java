@@ -79,14 +79,13 @@ public class Prototype {
          * A map that holds the location name entities as mapped to counties
          */
         Map<String, Integer> countiesMap = new HashMap<>();
-        for (String url : urls) {
+        urls.stream().forEach((url) -> {
             Map<String, Map> dataMap = new HashMap<>();
             Map<String, Map> neMap = new HashMap<>();
             Map<String, Integer> neWordMap = new HashMap();
             Map<String, Map> wordsMap = new HashMap<>();
             Map<String, Integer> wordMap;
             Map<String, String> titleMap = new HashMap<>();
-
             if (url.startsWith("http://www.nation.co.ke/")) {
                 HTMLArticle htmlArticle = new HTMLArticle(url);
                 List<String> paragraphList = htmlArticle.paragraphs;
@@ -94,8 +93,6 @@ public class Prototype {
                 String title = htmlArticle.headline;
                 titleMap.put(title, summary);
                 dataMap.put("Summary", titleMap);
-                
-
                 if (!paragraphList.isEmpty()) {
                     String prevNeWord = "";
                     String prevNe = "";
@@ -130,11 +127,11 @@ public class Prototype {
                                     wordMap.put(pos, wordCount);
                                 }
                                 wordsMap.put(word, wordMap);
-
-                                /* 
-                                 We have to get the full name entity including title which will not have been
-                                 tagged by the ner this could involve n-gram processing and addition of custom ners
-                                 */
+                                
+                                /*
+                                We have to get the full name entity including title which will not have been
+                                tagged by the ner this could involve n-gram processing and addition of custom ners
+                                */
                                 if (!ne.equalsIgnoreCase("O")) {
                                     neWord = word;
                                     if (ne.equalsIgnoreCase(prevNe)) {
@@ -160,8 +157,8 @@ public class Prototype {
                         }
                     }
                     /*
-                     at this point map out the location name entities to counties
-                     */
+                    at this point map out the location name entities to counties
+                    */
                     Map locationsMap = neMap.get("LOCATION");
                     if (locationsMap != null) {
                         Iterator it1 = locationsMap.entrySet().iterator();
@@ -190,9 +187,8 @@ public class Prototype {
                     dataMap.put("WORD", wordsMap);
                     jsonMap.put(url, dataMap);
                 }
-
             }
-        }
+        });
         String[] jsonArrays = {gson.toJson(jsonMap), gson.toJson(countiesMap)};
         return jsonArrays;
     }

@@ -58,7 +58,7 @@ public class DissertationPrototype extends DefaultHandler {
      */
     public static void main(String[] args) {
         //Set system properties (proxy)
-        System.setProperty("proxyHost", "172.16.30.6");
+        System.setProperty("proxyHost", "172.16.30.5");
         System.setProperty("proxyPort", "8080");
         try {
             list = new ArrayList<>();
